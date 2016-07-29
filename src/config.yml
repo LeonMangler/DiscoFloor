@@ -1,0 +1,19 @@
+# DiscoFloor v1.2.2 - Configuration
+#
+# The delay between each recalculation of the blocks in the disco floors
+# in ticks; 1 second = 20 ticks
+# Smaller amounts can cause lag
+ColorSwitchTime: 5
+# Removes server-side lag, needs the plugin ProtocolLib to work
+UseProtocolLibPackets: true
+# The id of the blocks used in the disco floors
+# You can add beacons and place diamond blocks beneath the disco floor to create awesome disco beams
+Blocks:
+- 95
+- '95:1'
+- '95:2'
+- '95:3'
+- '95:3'
+- '95:4'
+- '95:5'
+- '95:6'
