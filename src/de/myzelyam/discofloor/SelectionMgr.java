@@ -8,6 +8,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 
 import java.util.HashMap;
@@ -16,9 +17,8 @@ import java.util.UUID;
 
 public class SelectionMgr implements Listener {
 
-    public Map<UUID, Location> firstSelections = new HashMap<>();
-    public Map<UUID, Location> secondSelections = new HashMap<>();
-    private Map<UUID, Long> clickInteractionCoolDowns = new HashMap<>();
+    private Map<UUID, Location> playerFirstSelectionMap = new HashMap<>();
+    private Map<UUID, Location> playerSecondSelectionMap = new HashMap<>();
     private DiscoFloorPlugin plugin;
 
     public SelectionMgr(DiscoFloorPlugin plugin) {
@@ -27,26 +27,25 @@ public class SelectionMgr implements Listener {
 
     public boolean hasValidSelection(Player p) {
         //noinspection SimplifiableIfStatement
-        if (firstSelections.get(p.getUniqueId()) == null || secondSelections.get(p.getUniqueId()) == null)
+        if (playerFirstSelectionMap.get(p.getUniqueId()) == null || playerSecondSelectionMap.get(p.getUniqueId()) == null)
             return false;
-        return firstSelections.get(p.getUniqueId()).getWorld().getName().equals(secondSelections.get(p.getUniqueId())
+        return playerFirstSelectionMap.get(p.getUniqueId()).getWorld().getName().equals(playerSecondSelectionMap.get(p.getUniqueId())
                 .getWorld().getName());
     }
 
     @EventHandler
     public void onSelect(PlayerInteractEvent e) {
         try {
+            try {
+                if (e.getHand() == EquipmentSlot.OFF_HAND) return;
+            } catch (NoSuchMethodError | NoClassDefFoundError ignored) {
+            }
             Player p = e.getPlayer();
             if (!p.hasPermission("discofloor.setup")) {
                 return;
             }
             if (!((e.getAction() == Action.LEFT_CLICK_BLOCK) || (e.getAction() == Action.RIGHT_CLICK_BLOCK)))
                 return;
-            if (clickInteractionCoolDowns.containsKey(p.getUniqueId())) {
-                if (clickInteractionCoolDowns.get(p.getUniqueId()) < (System.currentTimeMillis() - 20L)) {
-                    clickInteractionCoolDowns.remove(p.getUniqueId());
-                } else return;
-            } else clickInteractionCoolDowns.put(p.getUniqueId(), System.currentTimeMillis());
             @SuppressWarnings("deprecation") ItemStack itemInHand = p.getItemInHand();
             if (itemInHand == null
                     || itemInHand.getItemMeta() == null
@@ -60,9 +59,9 @@ public class SelectionMgr implements Listener {
                 return;
             Location blockLocation = e.getClickedBlock().getLocation();
             if (e.getAction() == Action.LEFT_CLICK_BLOCK)
-                firstSelections.put(p.getUniqueId(), blockLocation);
+                playerFirstSelectionMap.put(p.getUniqueId(), blockLocation);
             else
-                secondSelections.put(p.getUniqueId(), blockLocation);
+                playerSecondSelectionMap.put(p.getUniqueId(), blockLocation);
             p.sendMessage(ChatColor.GOLD + "Location " + ChatColor.YELLOW + ""
                     + (e.getAction() == Action.LEFT_CLICK_BLOCK ? "1" : "2")
                     + ChatColor.GOLD + " at " + ChatColor.GOLD + "X"
@@ -76,4 +75,11 @@ public class SelectionMgr implements Listener {
         }
     }
 
+    public Location getFirstSelection(UUID player) {
+        return playerFirstSelectionMap.get(player);
+    }
+
+    public Location getSecondSelection(UUID player) {
+        return playerSecondSelectionMap.get(player);
+    }
 }

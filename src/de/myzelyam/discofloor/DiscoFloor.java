@@ -1,10 +1,10 @@
 package de.myzelyam.discofloor;
 
-import de.myzelyam.discofloor.DiscoFloorPlugin.BlockInfo;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
+import org.bukkit.material.MaterialData;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -13,68 +13,33 @@ import java.util.List;
 class DiscoFloor {
 
     private final DiscoFloorPlugin plugin;
-    private final Location firstSelection, secondSelection;
+    private final Location point1, point2;
     boolean taskStarted = false;
     private String id;
     private BukkitTask task;
 
-    DiscoFloor(String id, Location firstSelection, Location secondSelection, DiscoFloorPlugin plugin) {
+    DiscoFloor(String id, Location point1, Location point2, DiscoFloorPlugin plugin) {
         this.plugin = plugin;
         this.id = id;
-        this.firstSelection = firstSelection;
-        this.secondSelection = secondSelection;
+        this.point1 = point1;
+        this.point2 = point2;
         if (!plugin.data.getStringList("DisabledFloors").contains(id))
             startTask();
     }
 
-    void createBukkitBlocks() {
-        for (Block b : getBlocks()) {
-            BlockInfo combi = plugin.getRandomFloorBlockType();
-            b.setType(combi.material);
-            //noinspection deprecation
-            b.setData(combi.data);
-        }
-    }
-
     void startTask() {
-        if (taskStarted)
-            return;
+        if (taskStarted) return;
         task = new BukkitRunnable() {
 
             @Override
             public void run() {
                 try {
-                    if (firstSelection.getWorld() == null
-                            || firstSelection.getWorld().getName() == null) {
+                    if (point1.getWorld() == null
+                            || point1.getWorld().getName() == null) {
                         cancel();
                         return;
                     }
-                    List<Block> blocks = getBlocks();
-                    Location center = new Cuboid(firstSelection, secondSelection).getCenter();
-                    if (center == null) {
-                        center = blocks.get(0).getLocation();
-                    }
-                    // send client-side block change
-                    for (Player p : Bukkit.getOnlinePlayers()) {
-                        if (!center.getWorld().getName()
-                                .equals(p.getWorld().getName()))
-                            continue;
-                        if (center.distanceSquared(p.getLocation()) > 1999.0)
-                            continue;
-                        if (plugin.getConfig().getBoolean(
-                                "UseProtocolLibPackets")
-                                && plugin.protocolLib) {
-                            plugin.protocolLibPacketMgr
-                                    .sendMultiBlockChangePacket(p, blocks);
-                        } else
-                            for (Block b : blocks) {
-                                BlockInfo blockInfo = plugin
-                                        .getRandomFloorBlockType();
-                                //noinspection deprecation
-                                p.sendBlockChange(b.getLocation(), blockInfo.material,
-                                        blockInfo.data);
-                            }
-                    }
+                    sendFakeBlockChanges(false);
                 } catch (Exception e) {
                     plugin.logException(e);
                 }
@@ -90,20 +55,48 @@ class DiscoFloor {
         taskStarted = false;
     }
 
+    void sendFakeBlockChanges(boolean replaceWithReal) {
+        Location center = new Cuboid(point1, point2).getCenter();
+        if (center == null) {
+            center = getBlocks().get(0).getLocation();
+        }
+        // send client-side block change
+        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+            if (!center.getWorld().getName()
+                    .equals(onlinePlayer.getWorld().getName()))
+                continue;
+            if (center.distanceSquared(onlinePlayer.getLocation()) > 1999.0)
+                continue;
+            if (plugin.getConfig().getBoolean(
+                    "UseProtocolLibPackets")
+                    && plugin.protocolLib) {
+                plugin.blockChangePacketMgr
+                        .sendAsyncMultiBlockChangePackets(onlinePlayer, getBlocks(), replaceWithReal);
+            } else
+                for (Block block : getBlocks()) {
+                    MaterialData materialData = plugin
+                            .getRandomFloorBlockData();
+                    //noinspection deprecation
+                    onlinePlayer.sendBlockChange(block.getLocation(), materialData.getItemType(),
+                            materialData.getData());
+                }
+        }
+    }
+
     private List<Block> getBlocks() {
-        Cuboid c = new Cuboid(firstSelection, secondSelection);
-        return c.getBlocks();
+        Cuboid cuboid = new Cuboid(point1, point2);
+        return cuboid.getBlocks();
     }
 
     public String getId() {
         return id;
     }
 
-    public Location getFirstSelection() {
-        return firstSelection;
+    public Location getPoint1() {
+        return point1;
     }
 
-    public Location getSecondSelection() {
-        return secondSelection;
+    public Location getPoint2() {
+        return point2;
     }
 }

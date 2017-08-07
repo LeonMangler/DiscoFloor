@@ -2,10 +2,9 @@ package de.myzelyam.discofloor;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -24,24 +23,23 @@ public class DiscoFloorPlugin extends JavaPlugin {
             .loadConfiguration(dataFile);
     public int taskPeriod;
     public boolean protocolLib;
-    public ProtocolLibPacketMgr protocolLibPacketMgr;
+    public BlockChangePacketMgr blockChangePacketMgr;
     private List<DiscoFloor> discoFloors = new ArrayList<>();
     private SelectionMgr selectionMgr;
-    private CommandMgr commandMgr;
 
     @Override
     public void onEnable() {
         try {
             saveDefaultConfig();
             selectionMgr = new SelectionMgr(this);
-            commandMgr = new CommandMgr(this);
+            getCommand("df").setExecutor(new DiscoFloorCommandExecutor(this));
             taskPeriod = getConfig().getInt("ColorSwitchTime");
             saveData();
             loadDiscoFloors();
             getServer().getPluginManager().registerEvents(selectionMgr, this);
             protocolLib = getServer().getPluginManager().isPluginEnabled("ProtocolLib");
             if (protocolLib)
-                protocolLibPacketMgr = new ProtocolLibPacketMgr(this);
+                blockChangePacketMgr = new BlockChangePacketMgr(this);
         } catch (Exception e) {
             logException(e);
         }
@@ -52,37 +50,30 @@ public class DiscoFloorPlugin extends JavaPlugin {
         discoFloors.clear();
     }
 
-    @Override
-    public boolean onCommand(CommandSender sender, Command command,
-                             String label, String[] args) {
-        commandMgr.execute(sender, args);
-        return true;
-    }
-
     private void loadDiscoFloors() {
         for (String info : data.getStringList("DiscoFloors")) {
-            discoFloors.add(Serialization.deserializeFloor(info, this));
+            discoFloors.add(DiscoFloorFactory.createDiscoFloor(info, this));
         }
     }
 
-    public BlockInfo getRandomFloorBlockType() {
-        List<BlockInfo> list = getPossibleFloorBlockTypes();
+    public MaterialData getRandomFloorBlockData() {
+        List<MaterialData> list = getPossibleFloorBlockData();
         int random = new Random().nextInt(list.size());
         return list.get(random);
     }
 
     @SuppressWarnings("deprecation")
-    private List<BlockInfo> getPossibleFloorBlockTypes() {
-        List<BlockInfo> blockInfoList = new ArrayList<>();
+    private List<MaterialData> getPossibleFloorBlockData() {
+        List<MaterialData> blockInfoList = new ArrayList<>();
         for (String type : getConfig().getStringList("Blocks")) {
             try {
                 if (type.contains(":")) {
                     String[] split = type.split(":");
-                    blockInfoList.add(new BlockInfo(Material
-                            .getMaterial(Integer.parseInt(split[0])), (byte) Integer
-                            .parseInt(split[1])));
+                    blockInfoList.add(new MaterialData(
+                            Material.getMaterial(Integer.parseInt(split[0])),
+                            Byte.parseByte(split[1])));
                 } else {
-                    blockInfoList.add(new BlockInfo(Material
+                    blockInfoList.add(new MaterialData(Material
                             .getMaterial(Integer.parseInt(type)), (byte) 0));
                 }
             } catch (NumberFormatException ignored) {
@@ -107,14 +98,13 @@ public class DiscoFloorPlugin extends JavaPlugin {
             logger.warning("Message: ");
             logger.warning("  " + e.getMessage());
             logger.warning("General information: ");
-            String pluginInfo = "";
+            StringBuilder pluginInfo = new StringBuilder();
             for (Plugin plugin : Bukkit.getServer().getPluginManager().getPlugins()) {
                 if (plugin.getName().equalsIgnoreCase("DiscoFloor"))
                     continue;
-                pluginInfo = pluginInfo + plugin.getName();
-                pluginInfo = pluginInfo + " v"
-                        + plugin.getDescription().getVersion();
-                pluginInfo = pluginInfo + ", ";
+                pluginInfo.append(plugin.getName());
+                pluginInfo.append(" v").append(plugin.getDescription().getVersion());
+                pluginInfo.append(", ");
             }
             logger.warning("  ServerVersion: "
                     + this.getServer().getVersion());
@@ -141,16 +131,5 @@ public class DiscoFloorPlugin extends JavaPlugin {
 
     public SelectionMgr getSelectionMgr() {
         return selectionMgr;
-    }
-
-    public class BlockInfo {
-
-        public byte data;
-        public Material material;
-
-        public BlockInfo(Material material, byte data) {
-            this.data = data;
-            this.material = material;
-        }
     }
 }
