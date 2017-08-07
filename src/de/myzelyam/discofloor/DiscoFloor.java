@@ -1,6 +1,5 @@
 package de.myzelyam.discofloor;
 
-import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
@@ -61,25 +60,22 @@ class DiscoFloor {
             center = getBlocks().get(0).getLocation();
         }
         // send client-side block change
-        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
-            if (!center.getWorld().getName()
-                    .equals(onlinePlayer.getWorld().getName()))
+        for (Player worldPlayer : center.getWorld().getPlayers()) {
+            if (center.distanceSquared(worldPlayer.getLocation()) > 1999.0)
                 continue;
-            if (center.distanceSquared(onlinePlayer.getLocation()) > 1999.0)
-                continue;
-            if (plugin.getConfig().getBoolean(
-                    "UseProtocolLibPackets")
-                    && plugin.protocolLib) {
+            if (plugin.getConfig().getBoolean("UseProtocolLibPackets") && plugin.protocolLib) {
                 plugin.blockChangePacketMgr
-                        .sendAsyncMultiBlockChangePackets(onlinePlayer, getBlocks(), replaceWithReal);
-            } else
+                        .sendAsyncMultiBlockChangePackets(worldPlayer, getBlocks(), replaceWithReal);
+            } else {
                 for (Block block : getBlocks()) {
-                    MaterialData materialData = plugin
-                            .getRandomFloorBlockData();
+                    MaterialData materialData = plugin.getRandomFloorBlockData();
+                    if (replaceWithReal)//noinspection deprecation
+                        materialData = new MaterialData(block.getType(), block.getData());
                     //noinspection deprecation
-                    onlinePlayer.sendBlockChange(block.getLocation(), materialData.getItemType(),
+                    worldPlayer.sendBlockChange(block.getLocation(), materialData.getItemType(),
                             materialData.getData());
                 }
+            }
         }
     }
 
