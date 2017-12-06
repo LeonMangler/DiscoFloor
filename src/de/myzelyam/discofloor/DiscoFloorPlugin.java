@@ -12,15 +12,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
 public class DiscoFloorPlugin extends JavaPlugin {
 
-    public File dataFile = new File(this.getDataFolder().getPath()
-            + File.separator + "data.yml");
-    public FileConfiguration data = YamlConfiguration
-            .loadConfiguration(dataFile);
+    public File dataFile = new File(getDataFolder().getPath() + File.separator + "data.yml");
+    public FileConfiguration data = YamlConfiguration.loadConfiguration(dataFile);
     public int taskPeriod;
     public boolean protocolLib;
     public BlockChangePacketMgr blockChangePacketMgr;
@@ -38,8 +36,7 @@ public class DiscoFloorPlugin extends JavaPlugin {
             loadDiscoFloors();
             getServer().getPluginManager().registerEvents(selectionMgr, this);
             protocolLib = getServer().getPluginManager().isPluginEnabled("ProtocolLib");
-            if (protocolLib)
-                blockChangePacketMgr = new BlockChangePacketMgr(this);
+            if (protocolLib) blockChangePacketMgr = new BlockChangePacketMgr(this);
         } catch (Exception e) {
             logException(e);
         }
@@ -58,25 +55,31 @@ public class DiscoFloorPlugin extends JavaPlugin {
 
     public MaterialData getRandomFloorBlockData() {
         List<MaterialData> list = getPossibleFloorBlockData();
-        int random = new Random().nextInt(list.size());
-        return list.get(random);
+        return list.get(ThreadLocalRandom.current().nextInt(list.size()));
     }
 
     @SuppressWarnings("deprecation")
     private List<MaterialData> getPossibleFloorBlockData() {
         List<MaterialData> blockInfoList = new ArrayList<>();
-        for (String type : getConfig().getStringList("Blocks")) {
-            try {
-                if (type.contains(":")) {
-                    String[] split = type.split(":");
-                    blockInfoList.add(new MaterialData(
-                            Material.getMaterial(Integer.parseInt(split[0])),
-                            Byte.parseByte(split[1])));
-                } else {
-                    blockInfoList.add(new MaterialData(Material
-                            .getMaterial(Integer.parseInt(type)), (byte) 0));
+        for (String blockInfo : getConfig().getStringList("Blocks")) {
+            if (blockInfo.contains(":")) {
+                String[] split = blockInfo.split(":");
+                String type = split[0];
+                Material material = Material.getMaterial(type);
+                try {
+                    if (material == null) material = Material.getMaterial(Integer.parseInt(type));
+                } catch (NumberFormatException | NoSuchMethodError e) {
+                    continue;
                 }
-            } catch (NumberFormatException ignored) {
+                blockInfoList.add(new MaterialData(material, Byte.parseByte(split[1])));
+            } else {
+                Material material = Material.getMaterial(blockInfo);
+                try {
+                    if (material == null) material = Material.getMaterial(Integer.parseInt(blockInfo));
+                } catch (NumberFormatException | NoSuchMethodError e) {
+                    continue;
+                }
+                blockInfoList.add(new MaterialData(material, (byte) 0));
             }
         }
         return blockInfoList;
@@ -106,18 +109,16 @@ public class DiscoFloorPlugin extends JavaPlugin {
                 pluginInfo.append(" v").append(plugin.getDescription().getVersion());
                 pluginInfo.append(", ");
             }
-            logger.warning("  ServerVersion: "
-                    + this.getServer().getVersion());
-            logger.warning("  PluginVersion: "
-                    + this.getDescription().getVersion());
+            logger.warning("  ServerVersion: " + getServer().getVersion());
+            logger.warning("  PluginVersion: " + getDescription().getVersion());
             logger.warning("  ServerPlugins: " + pluginInfo);
             logger.warning("StackTrace: ");
             e.printStackTrace();
             logger.warning("[DiscoFloor] Please include this information");
             logger.warning("[DiscoFloor] if you report the issue.");
         } catch (Exception e2) {
-            Bukkit.getLogger().warning("[DiscoFloor] An exception occurred while trying to print a detailed " +
-                    "stacktrace, printing an undetailed stacktrace of both exceptions:");
+            Bukkit.getLogger().warning("[DiscoFloor] An exception occurred while trying to print a " +
+                    "detailed stacktrace, printing an undetailed stacktrace of both exceptions:");
             Bukkit.getLogger().warning("ORIGINAL EXCEPTION:");
             e.printStackTrace();
             Bukkit.getLogger().warning("EXCEPTION WHILE PRINTING DETAILED STACKTRACE:");

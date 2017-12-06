@@ -1,4 +1,4 @@
-# DiscoFloor v1.3.0 - Configuration
+# DiscoFloor v1.4.0 - Configuration
 #
 # The delay between each recalculation of the blocks in the disco floors
 # in ticks; 1 second = 20 ticks
@@ -6,14 +6,19 @@
 ColorSwitchTime: 5
 # Removes server-side lag, needs the plugin ProtocolLib to work
 UseProtocolLibPackets: true
-# The id of the blocks used in the disco floors
+# The blocks used in the disco floors
+# Format: MATERIAL:DATA (any minecraft version) or BLOCKID:DATA (MC 1.12 and earlier)
+# You can find a list all materials here:
+# https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Material.html
+# You can find a list of all block ids and data ids here:
+# https://minecraft-ids.grahamedgecombe.com
 # You can add beacons and place diamond blocks beneath the disco floor to create awesome disco beams
 Blocks:
-- 95
-- '95:1'
-- '95:2'
-- '95:3'
-- '95:3'
-- '95:4'
-- '95:5'
-- '95:6'
+- 'STAINED_GLASS'
+- 'STAINED_GLASS:1'
+- 'STAINED_GLASS:2'
+- 'STAINED_GLASS:3'
+- 'STAINED_GLASS:3'
+- 'STAINED_GLASS:4'
+- 'STAINED_GLASS:5'
+- 'STAINED_GLASS:6'
