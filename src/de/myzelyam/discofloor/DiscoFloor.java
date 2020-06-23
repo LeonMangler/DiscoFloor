@@ -14,7 +14,7 @@ class DiscoFloor {
     private final DiscoFloorPlugin plugin;
     private final Location point1, point2;
     boolean taskStarted = false;
-    private String id;
+    private final String id;
     private BukkitTask task;
 
     DiscoFloor(String id, Location point1, Location point2, DiscoFloorPlugin plugin) {
@@ -68,6 +68,7 @@ class DiscoFloor {
                         .sendAsyncMultiBlockChangePackets(worldPlayer, getBlocks(), replaceWithReal);
             } else {
                 for (Block block : getBlocks()) {
+                    //noinspection deprecation
                     MaterialData materialData = plugin.getRandomFloorBlockData();
                     if (replaceWithReal)//noinspection deprecation
                         materialData = new MaterialData(block.getType(), block.getData());

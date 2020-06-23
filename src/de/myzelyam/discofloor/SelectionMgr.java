@@ -17,9 +17,9 @@ import java.util.UUID;
 
 public class SelectionMgr implements Listener {
 
-    private Map<UUID, Location> playerFirstSelectionMap = new HashMap<>();
-    private Map<UUID, Location> playerSecondSelectionMap = new HashMap<>();
-    private DiscoFloorPlugin plugin;
+    private final Map<UUID, Location> playerFirstSelectionMap = new HashMap<>();
+    private final Map<UUID, Location> playerSecondSelectionMap = new HashMap<>();
+    private final DiscoFloorPlugin plugin;
 
     public SelectionMgr(DiscoFloorPlugin plugin) {
         this.plugin = plugin;

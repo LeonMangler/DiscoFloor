@@ -22,7 +22,7 @@ public class DiscoFloorPlugin extends JavaPlugin {
     public int taskPeriod;
     public boolean protocolLib;
     public BlockChangePacketMgr blockChangePacketMgr;
-    private List<DiscoFloor> discoFloors = new ArrayList<>();
+    private final List<DiscoFloor> discoFloors = new ArrayList<>();
     private SelectionMgr selectionMgr;
 
     @Override
@@ -53,6 +53,7 @@ public class DiscoFloorPlugin extends JavaPlugin {
         }
     }
 
+    @SuppressWarnings("deprecation")
     public MaterialData getRandomFloorBlockData() {
         List<MaterialData> list = getPossibleFloorBlockData();
         return list.get(ThreadLocalRandom.current().nextInt(list.size()));
@@ -66,19 +67,9 @@ public class DiscoFloorPlugin extends JavaPlugin {
                 String[] split = blockInfo.split(":");
                 String type = split[0];
                 Material material = Material.getMaterial(type);
-                try {
-                    if (material == null) material = Material.getMaterial(Integer.parseInt(type));
-                } catch (NumberFormatException | NoSuchMethodError e) {
-                    continue;
-                }
                 blockInfoList.add(new MaterialData(material, Byte.parseByte(split[1])));
             } else {
                 Material material = Material.getMaterial(blockInfo);
-                try {
-                    if (material == null) material = Material.getMaterial(Integer.parseInt(blockInfo));
-                } catch (NumberFormatException | NoSuchMethodError e) {
-                    continue;
-                }
                 blockInfoList.add(new MaterialData(material, (byte) 0));
             }
         }

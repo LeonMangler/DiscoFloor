@@ -27,8 +27,8 @@ import java.util.concurrent.TimeUnit;
 
 public class BlockChangePacketMgr implements Listener {
 
-    private DiscoFloorPlugin plugin;
-    private Map<Player, Long> playerTimeForMorePacketsMap;
+    private final DiscoFloorPlugin plugin;
+    private final Map<Player, Long> playerTimeForMorePacketsMap;
 
     public BlockChangePacketMgr(DiscoFloorPlugin plugin) {
         this.plugin = plugin;
@@ -49,6 +49,18 @@ public class BlockChangePacketMgr implements Listener {
 
     public void sendAsyncMultiBlockChangePackets(final Player p, final List<Block> blocks,
                                                  final boolean sendCurrentRealBlocksInstead) {
+        // arrange block changes to chunk batches
+        final Map<Chunk, List<Block>> chunks = new HashMap<>();
+        for (Block block : blocks) {
+            Chunk chunk = block.getChunk();
+            if (chunks.get(chunk) == null) {
+                chunks.put(chunk, new LinkedList<>(Collections.singletonList(block)));
+            } else {
+                List<Block> chunkBlocks = chunks.get(chunk);
+                chunkBlocks.add(block);
+                chunks.put(chunk, chunkBlocks);
+            }
+        }
         new BukkitRunnable() {
 
             @Override
@@ -57,19 +69,6 @@ public class BlockChangePacketMgr implements Listener {
                 if (playerTimeForMorePacketsMap.containsKey(p)
                         && playerTimeForMorePacketsMap.get(p) > System.currentTimeMillis())
                     return;
-
-                // arrange block changes to chunk batches
-                Map<Chunk, List<Block>> chunks = new HashMap<>();
-                for (Block block : blocks) {
-                    Chunk chunk = block.getChunk();
-                    if (chunks.get(chunk) == null) {
-                        chunks.put(chunk, new LinkedList<>(Collections.singletonList(block)));
-                    } else {
-                        List<Block> chunkBlocks = chunks.get(chunk);
-                        chunkBlocks.add(block);
-                        chunks.put(chunk, chunkBlocks);
-                    }
-                }
 
                 for (Chunk chunk : chunks.keySet()) {
                     List<Block> chunkBlocks = chunks.get(chunk);
@@ -81,6 +80,7 @@ public class BlockChangePacketMgr implements Listener {
                     MultiBlockChangeInfo[] packetInfo = new MultiBlockChangeInfo[chunkBlocks.size()];
                     for (int i = 0; i < chunkBlocks.size(); i++) {
                         Block chunkBlock = chunkBlocks.get(i);
+                        //noinspection deprecation
                         MaterialData nextBlockData = plugin.getRandomFloorBlockData();
                         if (sendCurrentRealBlocksInstead) {
                             //noinspection deprecation

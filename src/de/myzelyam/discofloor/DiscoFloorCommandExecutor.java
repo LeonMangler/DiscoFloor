@@ -13,7 +13,7 @@ import java.util.List;
 
 public class DiscoFloorCommandExecutor implements CommandExecutor {
 
-    private DiscoFloorPlugin plugin;
+    private final DiscoFloorPlugin plugin;
 
     public DiscoFloorCommandExecutor(DiscoFloorPlugin plugin) {
         this.plugin = plugin;
@@ -132,7 +132,10 @@ public class DiscoFloorCommandExecutor implements CommandExecutor {
                     return true;
                 }
                 Player p = (Player) sender;
-                ItemStack wand = new ItemStack(Material.GOLD_AXE);
+                Material goldAxeMaterial = Material.getMaterial("GOLDEN_AXE") != null
+                        ? Material.getMaterial("GOLDEN_AXE")
+                        : Material.getMaterial("GOLD_AXE");
+                ItemStack wand = new ItemStack(goldAxeMaterial);
                 ItemMeta meta = wand.getItemMeta();
                 meta.setDisplayName(ChatColor.GOLD + "D" + ChatColor.RED + "i" + ChatColor.GREEN + "s"
                         + ChatColor.DARK_PURPLE + "c" + ChatColor.AQUA + "o " + ChatColor.YELLOW + "Selection Tool");
