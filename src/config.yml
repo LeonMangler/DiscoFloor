@@ -1,11 +1,12 @@
-# DiscoFloor v1.4.1 - Configuration
+# DiscoFloor v1.4.2 - Configuration
 #
 # The delay between each recalculation of the blocks in the disco floors
 # in ticks; 1 second = 20 ticks
 # Smaller amounts can cause lag
 ColorSwitchTime: 5
 # Removes server-side lag, needs the plugin ProtocolLib to work
-UseProtocolLibPackets: true
+# Currently broken on 1.15/16!
+UseProtocolLibPackets: false
 # The blocks used in the disco floors
 # Format: MATERIAL:DATA (any minecraft version) or BLOCKID:DATA (MC 1.12 and earlier)
 # You can find a list all materials here:

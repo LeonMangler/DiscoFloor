@@ -24,10 +24,13 @@ public class DiscoFloorPlugin extends JavaPlugin {
     public BlockChangePacketMgr blockChangePacketMgr;
     private final List<DiscoFloor> discoFloors = new ArrayList<>();
     private SelectionMgr selectionMgr;
+    private boolean materialsEmptyWarned = false;
+    private String version;
 
     @Override
     public void onEnable() {
         try {
+            version = getServer().getClass().getPackage().getName().replace(".", ",").split(",")[3];
             saveDefaultConfig();
             selectionMgr = new SelectionMgr(this);
             getCommand("df").setExecutor(new DiscoFloorCommandExecutor(this));
@@ -35,7 +38,9 @@ public class DiscoFloorPlugin extends JavaPlugin {
             saveData();
             loadDiscoFloors();
             getServer().getPluginManager().registerEvents(selectionMgr, this);
-            protocolLib = getServer().getPluginManager().isPluginEnabled("ProtocolLib");
+            protocolLib = getServer().getPluginManager().isPluginEnabled("ProtocolLib")
+                    && getConfig().getBoolean("UseProtocolLibPackets")
+                    && !isOneDotXOrHigher(15);
             if (protocolLib) blockChangePacketMgr = new BlockChangePacketMgr(this);
         } catch (Exception e) {
             logException(e);
@@ -56,6 +61,15 @@ public class DiscoFloorPlugin extends JavaPlugin {
     @SuppressWarnings("deprecation")
     public MaterialData getRandomFloorBlockData() {
         List<MaterialData> list = getPossibleFloorBlockData();
+        if (list.isEmpty()) {
+            if (!materialsEmptyWarned) {
+                getLogger().severe("Your config file isnt configured correctly - there are no valid Blocks. " +
+                        "Please be sure to not use numeric IDs in newer versions of minecraft since they arent " +
+                        "supported anymore. In this case regenerating your config file by deleting it can help.");
+                materialsEmptyWarned = true;
+            }
+            return new MaterialData(Material.STONE);
+        }
         return list.get(ThreadLocalRandom.current().nextInt(list.size()));
     }
 
@@ -123,5 +137,11 @@ public class DiscoFloorPlugin extends JavaPlugin {
 
     public SelectionMgr getSelectionMgr() {
         return selectionMgr;
+    }
+
+    public boolean isOneDotXOrHigher(int majorRelease) {
+        for (int i = majorRelease; i < 20; i++)
+            if (version.contains("v1_" + i + "_R")) return true;
+        return version.contains("v2_");
     }
 }
