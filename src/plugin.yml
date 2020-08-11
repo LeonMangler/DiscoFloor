@@ -1,5 +1,5 @@
 name: DiscoFloor
-version: 1.4.2
+version: 1.4.3
 main: de.myzelyam.discofloor.DiscoFloorPlugin
 author: MyzelYam
 description: Creates nice disco floors with moving colors

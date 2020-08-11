@@ -6,23 +6,19 @@ import com.comphenix.protocol.events.PacketContainer;
 import com.comphenix.protocol.wrappers.ChunkCoordIntPair;
 import com.comphenix.protocol.wrappers.MultiBlockChangeInfo;
 import com.comphenix.protocol.wrappers.WrappedBlockData;
-
 import org.bukkit.Chunk;
+import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.material.MaterialData;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 public class BlockChangePacketMgr implements Listener {
@@ -50,15 +46,21 @@ public class BlockChangePacketMgr implements Listener {
     public void sendAsyncMultiBlockChangePackets(final Player p, final List<Block> blocks,
                                                  final boolean sendCurrentRealBlocksInstead) {
         // arrange block changes to chunk batches
-        final Map<Chunk, List<Block>> chunks = new HashMap<>();
+        final Map<Chunk, RelevantChunkInfo> chunks = new HashMap<>();
+
         for (Block block : blocks) {
             Chunk chunk = block.getChunk();
+            RelevantBlockInfo blockInfo = new RelevantBlockInfo(block.getLocation(), block.getType());
+
             if (chunks.get(chunk) == null) {
-                chunks.put(chunk, new LinkedList<>(Collections.singletonList(block)));
+                RelevantChunkInfo chunkInfo = new RelevantChunkInfo(
+                        new LinkedList<>(Collections.singletonList(blockInfo)),
+                        chunk.getX(), chunk.getZ());
+                chunks.put(chunk, chunkInfo);
             } else {
-                List<Block> chunkBlocks = chunks.get(chunk);
-                chunkBlocks.add(block);
-                chunks.put(chunk, chunkBlocks);
+                RelevantChunkInfo chunkInfo = chunks.get(chunk);
+                chunkInfo.getBlockInfo().add(blockInfo);
+                chunks.put(chunk, chunkInfo);
             }
         }
         new BukkitRunnable() {
@@ -71,24 +73,21 @@ public class BlockChangePacketMgr implements Listener {
                     return;
 
                 for (Chunk chunk : chunks.keySet()) {
-                    List<Block> chunkBlocks = chunks.get(chunk);
+                    RelevantChunkInfo chunkInfo = chunks.get(chunk);
+                    List<RelevantBlockInfo> chunkBlocks = chunkInfo.getBlockInfo();
 
                     PacketContainer packet = new PacketContainer(PacketType.Play.Server.MULTI_BLOCK_CHANGE);
                     packet.getChunkCoordIntPairs().write(0,
-                            new ChunkCoordIntPair(chunk.getX(), chunk.getZ()));
+                            new ChunkCoordIntPair(chunkInfo.getX(), chunkInfo.getZ()));
 
                     MultiBlockChangeInfo[] packetInfo = new MultiBlockChangeInfo[chunkBlocks.size()];
                     for (int i = 0; i < chunkBlocks.size(); i++) {
-                        Block chunkBlock = chunkBlocks.get(i);
-                        //noinspection deprecation
-                        MaterialData nextBlockData = plugin.getRandomFloorBlockData();
+                        RelevantBlockInfo chunkBlock = chunkBlocks.get(i);
+                        Material nextBlockType = plugin.getRandomFloorBlockType();
                         if (sendCurrentRealBlocksInstead) {
-                            //noinspection deprecation
-                            nextBlockData = new MaterialData(chunkBlock.getType(), chunkBlock.getData());
+                            nextBlockType = chunkBlock.getType();
                         }
-                        //noinspection deprecation
-                        WrappedBlockData data = WrappedBlockData.createData(
-                                nextBlockData.getItemType(), nextBlockData.getData());
+                        WrappedBlockData data = WrappedBlockData.createData(nextBlockType);
                         packetInfo[i] = new MultiBlockChangeInfo(chunkBlock.getLocation(), data);
                     }
                     packet.getMultiBlockChangeInfoArrays().write(0, packetInfo);
@@ -103,5 +102,52 @@ public class BlockChangePacketMgr implements Listener {
 
             }
         }.runTaskAsynchronously(plugin);
+    }
+
+    /**
+     * Used to wrap relevant information about a chunk to avoid interfering with the server asynchronously
+     */
+    private static class RelevantChunkInfo {
+        private final List<RelevantBlockInfo> blocks;
+        private final int x, z;
+
+        private RelevantChunkInfo(List<RelevantBlockInfo> blocks, int x, int z) {
+            this.blocks = blocks;
+            this.x = x;
+            this.z = z;
+        }
+
+        public List<RelevantBlockInfo> getBlockInfo() {
+            return blocks;
+        }
+
+        public int getX() {
+            return x;
+        }
+
+        public int getZ() {
+            return z;
+        }
+    }
+
+    /**
+     * Used to wrap relevant information about a block to avoid interfering with the server asynchronously
+     */
+    private static class RelevantBlockInfo {
+        private final Location location;
+        private final Material type;
+
+        private RelevantBlockInfo(Location location, Material type) {
+            this.location = location;
+            this.type = type;
+        }
+
+        public Location getLocation() {
+            return location;
+        }
+
+        public Material getType() {
+            return type;
+        }
     }
 }

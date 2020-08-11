@@ -1,25 +1,29 @@
-# DiscoFloor v1.4.2 - Configuration
+# DiscoFloor v1.4.3 - Configuration
 #
 # The delay between each recalculation of the blocks in the disco floors
 # in ticks; 1 second = 20 ticks
 # Smaller amounts can cause lag
 ColorSwitchTime: 5
 # Removes server-side lag, needs the plugin ProtocolLib to work
-# Currently broken on 1.15/16!
-UseProtocolLibPackets: false
+UseProtocolLibPackets: true
 # The blocks used in the disco floors
-# Format: MATERIAL:DATA (any minecraft version) or BLOCKID:DATA (MC 1.12 and earlier)
 # You can find a list all materials here:
 # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Material.html
-# You can find a list of all block ids and data ids here:
-# https://minecraft-ids.grahamedgecombe.com
-# You can add beacons and place diamond blocks beneath the disco floor to create awesome disco beams
+# You can add beacons and place diamond blocks beneath the disco floor to create disco beams
 Blocks:
-- 'STAINED_GLASS'
-- 'STAINED_GLASS:1'
-- 'STAINED_GLASS:2'
-- 'STAINED_GLASS:3'
-- 'STAINED_GLASS:3'
-- 'STAINED_GLASS:4'
-- 'STAINED_GLASS:5'
-- 'STAINED_GLASS:6'
+- 'WHITE_STAINED_GLASS'
+- 'ORANGE_STAINED_GLASS'
+- 'MAGENTA_STAINED_GLASS'
+- 'LIGHT_BLUE_STAINED_GLASS'
+- 'YELLOW_STAINED_GLASS'
+- 'LIME_STAINED_GLASS'
+- 'PINK_STAINED_GLASS'
+- 'GRAY_STAINED_GLASS'
+- 'LIGHT_GRAY_STAINED_GLASS'
+- 'CYAN_STAINED_GLASS'
+- 'PURPLE_STAINED_GLASS'
+- 'BLUE_STAINED_GLASS'
+- 'BROWN_STAINED_GLASS'
+- 'GREEN_STAINED_GLASS'
+- 'RED_STAINED_GLASS'
+- 'BLACK_STAINED_GLASS'

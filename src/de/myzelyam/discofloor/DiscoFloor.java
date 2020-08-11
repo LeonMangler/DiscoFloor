@@ -1,9 +1,9 @@
 package de.myzelyam.discofloor;
 
 import org.bukkit.Location;
+import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Player;
-import org.bukkit.material.MaterialData;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
@@ -33,10 +33,11 @@ class DiscoFloor {
             @Override
             public void run() {
                 try {
-                    if (point1.getWorld() == null
-                            || point1.getWorld().getName() == null) {
+                    if (point1.getWorld() == null) {
                         cancel();
                         return;
+                    } else {
+                        point1.getWorld().getName();
                     }
                     sendFakeBlockChanges(false);
                 } catch (Exception e) {
@@ -68,13 +69,10 @@ class DiscoFloor {
                         .sendAsyncMultiBlockChangePackets(worldPlayer, getBlocks(), replaceWithReal);
             } else {
                 for (Block block : getBlocks()) {
-                    //noinspection deprecation
-                    MaterialData materialData = plugin.getRandomFloorBlockData();
-                    if (replaceWithReal)//noinspection deprecation
-                        materialData = new MaterialData(block.getType(), block.getData());
-                    //noinspection deprecation
-                    worldPlayer.sendBlockChange(block.getLocation(), materialData.getItemType(),
-                            materialData.getData());
+                    Material material = plugin.getRandomFloorBlockType();
+                    if (replaceWithReal)
+                        material = block.getType();
+                    worldPlayer.sendBlockChange(block.getLocation(), material.createBlockData());
                 }
             }
         }

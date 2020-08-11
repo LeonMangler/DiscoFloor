@@ -4,7 +4,6 @@ import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.material.MaterialData;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -12,6 +11,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Logger;
 
@@ -26,12 +26,14 @@ public class DiscoFloorPlugin extends JavaPlugin {
     private SelectionMgr selectionMgr;
     private boolean materialsEmptyWarned = false;
     private String version;
+    private List<Material> configuredFloorBlockTypes = null;
 
     @Override
     public void onEnable() {
         try {
             version = getServer().getClass().getPackage().getName().replace(".", ",").split(",")[3];
             saveDefaultConfig();
+            configuredFloorBlockTypes = getConfiguredFloorBlockTypes();
             selectionMgr = new SelectionMgr(this);
             getCommand("df").setExecutor(new DiscoFloorCommandExecutor(this));
             taskPeriod = getConfig().getInt("ColorSwitchTime");
@@ -39,8 +41,7 @@ public class DiscoFloorPlugin extends JavaPlugin {
             loadDiscoFloors();
             getServer().getPluginManager().registerEvents(selectionMgr, this);
             protocolLib = getServer().getPluginManager().isPluginEnabled("ProtocolLib")
-                    && getConfig().getBoolean("UseProtocolLibPackets")
-                    && !isOneDotXOrHigher(15);
+                    && getConfig().getBoolean("UseProtocolLibPackets");
             if (protocolLib) blockChangePacketMgr = new BlockChangePacketMgr(this);
         } catch (Exception e) {
             logException(e);
@@ -58,36 +59,26 @@ public class DiscoFloorPlugin extends JavaPlugin {
         }
     }
 
-    @SuppressWarnings("deprecation")
-    public MaterialData getRandomFloorBlockData() {
-        List<MaterialData> list = getPossibleFloorBlockData();
-        if (list.isEmpty()) {
+    public Material getRandomFloorBlockType() {
+        if (configuredFloorBlockTypes.isEmpty()) {
             if (!materialsEmptyWarned) {
                 getLogger().severe("Your config file isnt configured correctly - there are no valid Blocks. " +
-                        "Please be sure to not use numeric IDs in newer versions of minecraft since they arent " +
-                        "supported anymore. In this case regenerating your config file by deleting it can help.");
+                        "Please be sure to not use numeric IDs since they arent supported anymore. " +
+                        "In this case regenerating your config file by deleting it will help.");
                 materialsEmptyWarned = true;
             }
-            return new MaterialData(Material.STONE);
+            return Material.STONE;
         }
-        return list.get(ThreadLocalRandom.current().nextInt(list.size()));
+        return configuredFloorBlockTypes.get(ThreadLocalRandom.current().nextInt(configuredFloorBlockTypes.size()));
     }
 
-    @SuppressWarnings("deprecation")
-    private List<MaterialData> getPossibleFloorBlockData() {
-        List<MaterialData> blockInfoList = new ArrayList<>();
+    private List<Material> getConfiguredFloorBlockTypes() {
+        List<Material> blockTypeList = new CopyOnWriteArrayList<>();
         for (String blockInfo : getConfig().getStringList("Blocks")) {
-            if (blockInfo.contains(":")) {
-                String[] split = blockInfo.split(":");
-                String type = split[0];
-                Material material = Material.getMaterial(type);
-                blockInfoList.add(new MaterialData(material, Byte.parseByte(split[1])));
-            } else {
-                Material material = Material.getMaterial(blockInfo);
-                blockInfoList.add(new MaterialData(material, (byte) 0));
-            }
+            Material material = Material.getMaterial(blockInfo);
+            if (material != null) blockTypeList.add(material);
         }
-        return blockInfoList;
+        return blockTypeList;
     }
 
     public void saveData() {
