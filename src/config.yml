@@ -5,7 +5,7 @@
 # Smaller amounts can cause lag
 ColorSwitchTime: 5
 # Removes server-side lag, needs the plugin ProtocolLib to work
-UseProtocolLibPackets: true
+UseProtocolLibPackets: false
 # The blocks used in the disco floors
 # You can find a list all materials here:
 # https://hub.spigotmc.org/javadocs/spigot/org/bukkit/Material.html
